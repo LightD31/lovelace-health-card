@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Health Connect Card</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-title {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        health-connect-card {
+            display: block;
+            margin-bottom: 20px;
+        }
+        .mock-data {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test - Health Connect Card</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">Configuration par défaut</h2>
+            <health-connect-card id="test1"></health-connect-card>
+            <div class="mock-data">
+                <strong>Configuration :</strong>
+                <pre>{ }</pre>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Signes vitaux uniquement</h2>
+            <health-connect-card id="test2"></health-connect-card>
+            <div class="mock-data">
+                <strong>Configuration :</strong>
+                <pre>{ "categories": ["vitals"], "title": "🫀 Signes vitaux" }</pre>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Activité uniquement</h2>
+            <health-connect-card id="test3"></health-connect-card>
+            <div class="mock-data">
+                <strong>Configuration :</strong>
+                <pre>{ "categories": ["activity"], "title": "🏃‍♂️ Activité" }</pre>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Configuration complète</h2>
+            <health-connect-card id="test4"></health-connect-card>
+            <div class="mock-data">
+                <strong>Configuration :</strong>
+                <pre>{
+  "title": "Ma santé complète", 
+  "categories": ["vitals", "activity", "body", "sleep"],
+  "show_empty_categories": true,
+  "entities": {
+    "heart_rate": "sensor.my_custom_heart_rate",
+    "steps": "sensor.custom_steps_counter", 
+    "weight": "sensor.personal_scale"
+  }
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chargement de la carte -->
+    <script src="dist/health-connect-card.js"></script>
+    
+    <!-- Données de test mock -->
+    <script>
+        // Simulation des données Home Assistant
+        const mockHass = {
+            states: {
+                // Entités par défaut Health Connect
+                'sensor.health_connect_heart_rate': {
+                    state: '72',
+                    attributes: { unit_of_measurement: 'bpm' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_resting_heart_rate': {
+                    state: '65',
+                    attributes: { unit_of_measurement: 'bpm' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_blood_glucose': {
+                    state: '95',
+                    attributes: { unit_of_measurement: 'mg/dL' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_systolic_blood_pressure': {
+                    state: '120',
+                    attributes: { unit_of_measurement: 'mmHg' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_diastolic_blood_pressure': {
+                    state: '80',
+                    attributes: { unit_of_measurement: 'mmHg' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_oxygen_saturation': {
+                    state: '98',
+                    attributes: { unit_of_measurement: '%' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_steps': {
+                    state: '8642',
+                    attributes: { unit_of_measurement: 'steps' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_distance': {
+                    state: '6234',
+                    attributes: { unit_of_measurement: 'm' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_active_calories_burned': {
+                    state: '385',
+                    attributes: { unit_of_measurement: 'kcal' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_total_calories_burned': {
+                    state: '2156',
+                    attributes: { unit_of_measurement: 'kcal' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_elevation_gained': {
+                    state: '127',
+                    attributes: { unit_of_measurement: 'm' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_floors_climbed': {
+                    state: '12',
+                    attributes: { unit_of_measurement: 'floors' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_weight': {
+                    state: '75500',
+                    attributes: { unit_of_measurement: 'g' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_body_fat': {
+                    state: '18.5',
+                    attributes: { unit_of_measurement: '%' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_vo2_max': {
+                    state: '42.3',
+                    attributes: { unit_of_measurement: 'mL/min/kg' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_sleep_duration': {
+                    state: '435',
+                    attributes: { unit_of_measurement: 'min' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_respiratory_rate': {
+                    state: '16',
+                    attributes: { unit_of_measurement: '/min' },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.health_connect_heart_rate_variability': {
+                    state: '45',
+                    attributes: { unit_of_measurement: 'ms' },
+                    last_updated: new Date().toISOString()
+                },
+
+                // Entités personnalisées pour les tests
+                'sensor.my_custom_heart_rate': {
+                    state: '78',
+                    attributes: { 
+                        unit_of_measurement: 'bpm',
+                        friendly_name: 'Mon capteur cardiaque personnalisé'
+                    },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.custom_steps_counter': {
+                    state: '12456',
+                    attributes: { 
+                        unit_of_measurement: 'steps',
+                        friendly_name: 'Compteur de pas personnalisé'
+                    },
+                    last_updated: new Date().toISOString()
+                },
+                'sensor.personal_scale': {
+                    state: '72800',
+                    attributes: { 
+                        unit_of_measurement: 'g',
+                        friendly_name: 'Ma balance personnelle'
+                    },
+                    last_updated: new Date().toISOString()
+                }
+            }
+        };
+
+        // Configuration des tests
+        const testConfigs = {
+            test1: {},
+            test2: { 
+                categories: ['vitals'], 
+                title: '🫀 Signes vitaux' 
+            },
+            test3: { 
+                categories: ['activity'], 
+                title: '🏃‍♂️ Activité' 
+            },
+            test4: { 
+                title: 'Ma santé complète', 
+                categories: ['vitals', 'activity', 'body', 'sleep'],
+                show_empty_categories: true,
+                entities: {
+                    heart_rate: 'sensor.my_custom_heart_rate',
+                    steps: 'sensor.custom_steps_counter',
+                    weight: 'sensor.personal_scale'
+                }
+            }
+        };
+
+        // Initialisation des cartes après chargement
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                Object.keys(testConfigs).forEach(testId => {
+                    const card = document.getElementById(testId);
+                    if (card) {
+                        try {
+                            card.setConfig(testConfigs[testId]);
+                            card.hass = mockHass;
+                        } catch (error) {
+                            console.error(`Erreur lors de l'initialisation de ${testId}:`, error);
+                        }
+                    }
+                });
+            }, 100);
+        });
+
+        // Simulation de mises à jour en temps réel
+        setInterval(() => {
+            // Variation aléatoire des valeurs pour simulation
+            const heartRateVariation = Math.floor(Math.random() * 10) - 5;
+            const newHeartRate = 72 + heartRateVariation;
+            mockHass.states['sensor.health_connect_heart_rate'].state = newHeartRate.toString();
+            mockHass.states['sensor.health_connect_heart_rate'].last_updated = new Date().toISOString();
+            
+            // Mise à jour des cartes
+            Object.keys(testConfigs).forEach(testId => {
+                const card = document.getElementById(testId);
+                if (card) {
+                    card.hass = { ...mockHass };
+                }
+            });
+        }, 5000); // Mise à jour toutes les 5 secondes
+
+        console.log('🧪 Test Health Connect Card initialisé');
+        console.log('📊 Données mock:', mockHass);
+    </script>
+</body>
+</html>
