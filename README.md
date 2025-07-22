@@ -79,7 +79,18 @@ resources:
 
 ## Configuration
 
-Add the card to your Lovelace dashboard:
+### Using the Visual Editor (Recommended)
+
+1. Add the card to your dashboard
+2. Click the **Configure** button (pencil icon) on the card
+3. Set a custom title (optional)
+4. Select which sensors you want to display by checking the boxes
+5. Only sensors that are available in your Home Assistant will be enabled
+6. Save your configuration
+
+### Manual YAML Configuration
+
+If you prefer to configure the card manually, you can use YAML:
 
 ### Basic Configuration
 

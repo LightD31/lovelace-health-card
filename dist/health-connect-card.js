@@ -456,9 +456,278 @@ class HealthConnectCard extends LitElement {
       ]
     };
   }
+
+  static getConfigElement() {
+    return document.createElement("health-connect-card-editor");
+  }
 }
 
 customElements.define("health-connect-card", HealthConnectCard);
+
+// Configuration Editor
+class HealthConnectCardEditor extends LitElement {
+  static get properties() {
+    return {
+      hass: { type: Object },
+      config: { type: Object }
+    };
+  }
+
+  setConfig(config) {
+    this.config = config;
+  }
+
+  static get styles() {
+    return css`
+      .card-config {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .option-label {
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+
+      ha-textfield {
+        width: 100%;
+      }
+
+      .sensor-selection {
+        border: 1px solid var(--divider-color);
+        border-radius: 8px;
+        padding: 16px;
+        margin-top: 8px;
+      }
+
+      .sensor-category {
+        margin-bottom: 16px;
+      }
+
+      .sensor-category:last-child {
+        margin-bottom: 0;
+      }
+
+      .category-title {
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: var(--primary-text-color);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .sensor-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+        padding: 4px 0;
+      }
+
+      .sensor-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .sensor-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .sensor-name {
+        font-size: 14px;
+        color: var(--primary-text-color);
+      }
+
+      .sensor-entity {
+        font-size: 11px;
+        color: var(--secondary-text-color);
+      }
+
+      .unavailable {
+        opacity: 0.5;
+      }
+
+      ha-checkbox {
+        margin-right: 8px;
+      }
+
+      ha-icon {
+        color: var(--secondary-text-color);
+        --mdc-icon-size: 20px;
+      }
+    `;
+  }
+
+  render() {
+    if (!this.config || !this.hass) {
+      return html``;
+    }
+
+    const sensorCategories = this._getSensorCategories();
+    const selectedSensors = this.config.sensors || [];
+
+    return html`
+      <div class="card-config">
+        <div class="option">
+          <div style="flex-direction: column; align-items: flex-start; width: 100%;">
+            <div class="option-label">Title</div>
+            <ha-textfield
+              .label="${"Card Title"}"
+              .value="${this.config.title || ""}"
+              .placeholder="${"Health Connect Sensors"}"
+              @input="${this._titleChanged}"
+            ></ha-textfield>
+          </div>
+        </div>
+
+        <div class="option">
+          <div style="flex-direction: column; align-items: flex-start; width: 100%;">
+            <div class="option-label">Sensors to Display</div>
+            <div class="sensor-selection">
+              ${Object.entries(sensorCategories).map(([categoryKey, category]) => 
+                this._renderSensorCategory(categoryKey, category, selectedSensors)
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  _renderSensorCategory(categoryKey, category, selectedSensors) {
+    return html`
+      <div class="sensor-category">
+        <div class="category-title">
+          <ha-icon icon="${this._getCategoryIcon(categoryKey)}"></ha-icon>
+          ${category.title}
+        </div>
+        ${category.sensors.map(sensor => {
+          const isAvailable = this.hass.states[sensor.entity];
+          const isSelected = selectedSensors.includes(sensor.entity);
+          
+          return html`
+            <div class="sensor-item ${!isAvailable ? 'unavailable' : ''}">
+              <ha-checkbox
+                .checked="${isSelected}"
+                .disabled="${!isAvailable}"
+                @change="${(e) => this._sensorToggled(sensor.entity, e.target.checked)}"
+              ></ha-checkbox>
+              <ha-icon icon="${sensor.icon}"></ha-icon>
+              <div class="sensor-info">
+                <div class="sensor-name">${sensor.name}</div>
+                <div class="sensor-entity">${sensor.entity}</div>
+              </div>
+            </div>
+          `;
+        })}
+      </div>
+    `;
+  }
+
+  _getSensorCategories() {
+    return {
+      vitals: {
+        title: "Vitals",
+        sensors: [
+          {entity: "sensor.health_connect_heart_rate", name: "Heart Rate", unit: "bpm", icon: "mdi:heart-pulse"},
+          {entity: "sensor.health_connect_resting_heart_rate", name: "Resting Heart Rate", unit: "bpm", icon: "mdi:heart"},
+          {entity: "sensor.health_connect_heart_rate_variability", name: "Heart Rate Variability", unit: "ms", icon: "mdi:heart-box"},
+          {entity: "sensor.health_connect_blood_glucose", name: "Blood Glucose", unit: "mg/dL", icon: "mdi:blood-bag"},
+          {entity: "sensor.health_connect_systolic_blood_pressure", name: "Systolic Blood Pressure", unit: "mmHg", icon: "mdi:arrow-up-bold"},
+          {entity: "sensor.health_connect_diastolic_blood_pressure", name: "Diastolic Blood Pressure", unit: "mmHg", icon: "mdi:arrow-down-bold"},
+          {entity: "sensor.health_connect_oxygen_saturation", name: "Oxygen Saturation", unit: "%", icon: "mdi:lungs"},
+          {entity: "sensor.health_connect_respiratory_rate", name: "Respiratory Rate", unit: "breaths/min", icon: "mdi:weather-windy"}
+        ]
+      },
+      activity: {
+        title: "Activity",
+        sensors: [
+          {entity: "sensor.health_connect_steps", name: "Steps", unit: "steps", icon: "mdi:walk"},
+          {entity: "sensor.health_connect_distance", name: "Distance", unit: "m", icon: "mdi:map-marker-distance"},
+          {entity: "sensor.health_connect_elevation_gained", name: "Elevation Gained", unit: "m", icon: "mdi:elevation-rise"},
+          {entity: "sensor.health_connect_floors_climbed", name: "Floors Climbed", unit: "floors", icon: "mdi:stairs-up"},
+          {entity: "sensor.health_connect_active_calories_burned", name: "Active Calories", unit: "kcal", icon: "mdi:fire"},
+          {entity: "sensor.health_connect_total_calories_burned", name: "Total Calories", unit: "kcal", icon: "mdi:fire-circle"}
+        ]
+      },
+      body_measurements: {
+        title: "Body Measurements",
+        sensors: [
+          {entity: "sensor.health_connect_weight", name: "Weight", unit: "g", icon: "mdi:weight"},
+          {entity: "sensor.health_connect_body_fat", name: "Body Fat", unit: "%", icon: "mdi:human-male"},
+          {entity: "sensor.health_connect_vo2_max", name: "VO2 Max", unit: "ml/min/kg", icon: "mdi:speedometer"}
+        ]
+      },
+      sleep: {
+        title: "Sleep",
+        sensors: [
+          {entity: "sensor.health_connect_sleep_duration", name: "Sleep Duration", unit: "min", icon: "mdi:sleep"}
+        ]
+      }
+    };
+  }
+
+  _getCategoryIcon(categoryKey) {
+    const icons = {
+      vitals: "mdi:heart-pulse",
+      activity: "mdi:run",
+      body_measurements: "mdi:scale-bathroom",
+      sleep: "mdi:sleep"
+    };
+    return icons[categoryKey] || "mdi:information-outline";
+  }
+
+  _titleChanged(ev) {
+    if (!this.config || !this.hass) {
+      return;
+    }
+    const target = ev.target;
+    if (this.config.title === target.value) {
+      return;
+    }
+    this._configChanged({ ...this.config, title: target.value });
+  }
+
+  _sensorToggled(entity, checked) {
+    if (!this.config || !this.hass) {
+      return;
+    }
+
+    let sensors = [...(this.config.sensors || [])];
+    
+    if (checked) {
+      if (!sensors.includes(entity)) {
+        sensors.push(entity);
+      }
+    } else {
+      sensors = sensors.filter(s => s !== entity);
+    }
+
+    this._configChanged({ ...this.config, sensors });
+  }
+
+  _configChanged(newConfig) {
+    const event = new CustomEvent("config-changed", {
+      detail: { config: newConfig },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
+  }
+}
+
+customElements.define("health-connect-card-editor", HealthConnectCardEditor);
 
 // Register the card in the UI
 window.customCards = window.customCards || [];
