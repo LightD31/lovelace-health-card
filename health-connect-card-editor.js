@@ -33,11 +33,12 @@ class HealthConnectCardEditor extends HTMLElement {
           display: flex;
           flex-direction: column;
           gap: 16px;
+          font-family: var(--primary-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
         }
         
         .config-section {
-          background: var(--primary-background-color);
-          border: 1px solid var(--divider-color);
+          background: var(--primary-background-color, #fff);
+          border: 1px solid var(--divider-color, #e1e5e9);
           border-radius: 8px;
           padding: 16px;
         }
@@ -46,7 +47,7 @@ class HealthConnectCardEditor extends HTMLElement {
           margin: 0 0 12px 0;
           font-size: 16px;
           font-weight: 600;
-          color: var(--primary-text-color);
+          color: var(--primary-text-color, #1f2937);
         }
         
         .config-row {
@@ -62,22 +63,37 @@ class HealthConnectCardEditor extends HTMLElement {
         
         .config-label {
           font-size: 14px;
-          color: var(--primary-text-color);
+          color: var(--primary-text-color, #1f2937);
           flex: 1;
         }
         
         .config-description {
           font-size: 12px;
-          color: var(--secondary-text-color);
+          color: var(--secondary-text-color, #6b7280);
           margin-top: 4px;
         }
         
-        ha-switch {
-          margin-left: 16px;
+        input[type="text"] {
+          width: 200px;
+          padding: 8px 12px;
+          border: 1px solid var(--divider-color, #e1e5e9);
+          border-radius: 4px;
+          font-size: 14px;
+          background: var(--primary-background-color, #fff);
+          color: var(--primary-text-color, #1f2937);
         }
         
-        ha-textfield {
-          width: 200px;
+        input[type="text"]:focus {
+          outline: none;
+          border-color: var(--primary-color, #3b82f6);
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+        
+        input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+          margin-left: 16px;
+          accent-color: var(--primary-color, #3b82f6);
         }
         
         .category-config {
@@ -95,7 +111,8 @@ class HealthConnectCardEditor extends HTMLElement {
         
         .category-item label {
           font-size: 14px;
-          color: var(--primary-text-color);
+          color: var(--primary-text-color, #1f2937);
+          cursor: pointer;
         }
         
         .entities-config {
@@ -108,12 +125,25 @@ class HealthConnectCardEditor extends HTMLElement {
         
         .entity-label {
           font-size: 13px;
-          color: var(--primary-text-color);
+          color: var(--primary-text-color, #1f2937);
           font-weight: 500;
         }
         
         .entity-input {
           width: 100%;
+          padding: 6px 10px;
+          border: 1px solid var(--divider-color, #e1e5e9);
+          border-radius: 4px;
+          font-size: 13px;
+          background: var(--primary-background-color, #fff);
+          color: var(--primary-text-color, #1f2937);
+          font-family: monospace;
+        }
+        
+        .entity-input:focus {
+          outline: none;
+          border-color: var(--primary-color, #3b82f6);
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
         }
         
         .collapsible {
@@ -128,6 +158,11 @@ class HealthConnectCardEditor extends HTMLElement {
           padding: 8px;
           background: var(--secondary-background-color, #f5f5f5);
           border-radius: 4px;
+          transition: background-color 0.2s;
+        }
+        
+        .collapsible-header:hover {
+          background: var(--divider-color, #e1e5e9);
         }
         
         .collapsible-content {
@@ -141,10 +176,33 @@ class HealthConnectCardEditor extends HTMLElement {
         
         .expand-icon {
           transition: transform 0.2s;
+          font-size: 12px;
         }
         
         .collapsible.expanded .expand-icon {
           transform: rotate(90deg);
+        }
+
+        .info-box {
+          font-size: 13px;
+          color: var(--secondary-text-color, #6b7280);
+          line-height: 1.5;
+          background: var(--secondary-background-color, #f8f9fa);
+          padding: 12px;
+          border-radius: 6px;
+        }
+        
+        .info-box ul {
+          margin: 8px 0;
+          padding-left: 20px;
+        }
+        
+        .info-box code {
+          background: var(--divider-color, #e1e5e9);
+          padding: 2px 4px;
+          border-radius: 3px;
+          font-family: monospace;
+          font-size: 12px;
         }
       </style>
       
@@ -157,11 +215,10 @@ class HealthConnectCardEditor extends HTMLElement {
               <div class="config-label">Titre personnalisé</div>
               <div class="config-description">Laissez vide pour utiliser le titre par défaut</div>
             </div>
-            <ha-textfield
-              .value=${this.config.title || ''}
-              .placeholder=${'Health Connect'}
-              @input=${this.titleChanged}
-            ></ha-textfield>
+            <input
+              type="text"
+              placeholder="Health Connect"
+            />
           </div>
           
           <div class="config-row">
@@ -169,10 +226,9 @@ class HealthConnectCardEditor extends HTMLElement {
               <div class="config-label">Afficher les catégories vides</div>
               <div class="config-description">Affiche les catégories même si aucun capteur n'est disponible</div>
             </div>
-            <ha-switch
-              .checked=${this.config.show_empty_categories || false}
-              @change=${this.showEmptyChanged}
-            ></ha-switch>
+            <input
+              type="checkbox"
+            />
           </div>
         </div>
         
@@ -182,35 +238,35 @@ class HealthConnectCardEditor extends HTMLElement {
           
           <div class="category-config">
             <div class="category-item">
-              <ha-checkbox
-                .checked=${this.isCategorySelected('vitals')}
-                @change=${(e) => this.categoryChanged('vitals', e.target.checked)}
-              ></ha-checkbox>
-              <label>🫀 Signes vitaux</label>
+              <input
+                type="checkbox"
+                id="cat-vitals"
+              />
+              <label for="cat-vitals">🫀 Signes vitaux</label>
             </div>
             
             <div class="category-item">
-              <ha-checkbox
-                .checked=${this.isCategorySelected('activity')}
-                @change=${(e) => this.categoryChanged('activity', e.target.checked)}
-              ></ha-checkbox>
-              <label>🏃‍♂️ Activité</label>
+              <input
+                type="checkbox"
+                id="cat-activity"
+              />
+              <label for="cat-activity">🏃‍♂️ Activité</label>
             </div>
             
             <div class="category-item">
-              <ha-checkbox
-                .checked=${this.isCategorySelected('body')}
-                @change=${(e) => this.categoryChanged('body', e.target.checked)}
-              ></ha-checkbox>
-              <label>⚖️ Mesures corporelles</label>
+              <input
+                type="checkbox"
+                id="cat-body"
+              />
+              <label for="cat-body">⚖️ Mesures corporelles</label>
             </div>
             
             <div class="category-item">
-              <ha-checkbox
-                .checked=${this.isCategorySelected('sleep')}
-                @change=${(e) => this.categoryChanged('sleep', e.target.checked)}
-              ></ha-checkbox>
-              <label>😴 Sommeil</label>
+              <input
+                type="checkbox"
+                id="cat-sleep"
+              />
+              <label for="cat-sleep">😴 Sommeil</label>
             </div>
           </div>
         </div>
@@ -227,68 +283,60 @@ class HealthConnectCardEditor extends HTMLElement {
             <div class="collapsible-content">
               <div class="entities-config">
                 <div class="entity-label">💓 Fréquence cardiaque:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('heart_rate')}
-                  .placeholder=${'sensor.health_connect_heart_rate'}
-                  @input=${(e) => this.entityChanged('heart_rate', e.target.value)}
-                ></ha-textfield>
+                  placeholder="sensor.health_connect_heart_rate"
+                />
                 
                 <div class="entity-label">💤 FC au repos:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('resting_heart_rate')}
-                  .placeholder=${'sensor.health_connect_resting_heart_rate'}
-                  @input=${(e) => this.entityChanged('resting_heart_rate', e.target.value)}
-                ></ha-textfield>
+                  placeholder="sensor.health_connect_resting_heart_rate"
+                />
                 
                 <div class="entity-label">🩸 Glycémie:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('blood_glucose')}
-                  .placeholder=${'sensor.health_connect_blood_glucose'}
-                  @input=${(e) => this.entityChanged('blood_glucose', e.target.value)}
-                ></ha-textfield>
+                  placeholder="sensor.health_connect_blood_glucose"
+                />
                 
                 <div class="entity-label">📈 Tension systolique:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('systolic_blood_pressure')}
-                  .placeholder=${'sensor.health_connect_systolic_blood_pressure'}
-                  @input=${(e) => this.entityChanged('systolic_blood_pressure', e.target.value)}
-                ></ha-textfield>
+                  placeholder="sensor.health_connect_systolic_blood_pressure"
+                />
                 
                 <div class="entity-label">📉 Tension diastolique:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('diastolic_blood_pressure')}
-                  .placeholder=${'sensor.health_connect_diastolic_blood_pressure'}
-                  @input=${(e) => this.entityChanged('diastolic_blood_pressure', e.target.value)}
-                ></ha-textfield>
+                  placeholder="sensor.health_connect_diastolic_blood_pressure"
+                />
                 
                 <div class="entity-label">🫁 Saturation O₂:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('oxygen_saturation')}
-                  .placeholder=${'sensor.health_connect_oxygen_saturation'}
-                  @input=${(e) => this.entityChanged('oxygen_saturation', e.target.value)}
-                ></ha-textfield>
+                  placeholder="sensor.health_connect_oxygen_saturation"
+                />
                 
                 <div class="entity-label">🌬️ Fréquence respiratoire:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('respiratory_rate')}
-                  .placeholder=${'sensor.health_connect_respiratory_rate'}
-                  @input=${(e) => this.entityChanged('respiratory_rate', e.target.value)}
-                ></ha-textfield>
+                  placeholder="sensor.health_connect_respiratory_rate"
+                />
                 
                 <div class="entity-label">📊 Variabilité FC:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('heart_rate_variability')}
-                  .placeholder=${'sensor.health_connect_heart_rate_variability'}
-                  @input=${(e) => this.entityChanged('heart_rate_variability', e.target.value)}
-                ></ha-textfield>
+                  placeholder="sensor.health_connect_heart_rate_variability"
+                />
               </div>
             </div>
           </div>
@@ -301,52 +349,58 @@ class HealthConnectCardEditor extends HTMLElement {
             <div class="collapsible-content">
               <div class="entities-config">
                 <div class="entity-label">👣 Pas:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('steps')}
-                  .placeholder=${'sensor.health_connect_steps'}
-                  @input=${(e) => this.entityChanged('steps', e.target.value)}
-                ></ha-textfield>
+                  .value="${this.getEntityValue('steps')}"
+                  placeholder="sensor.health_connect_steps"
+                  @input="${(e) => this.entityChanged('steps', e.target.value)}"
+                />
                 
                 <div class="entity-label">📍 Distance:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('distance')}
-                  .placeholder=${'sensor.health_connect_distance'}
-                  @input=${(e) => this.entityChanged('distance', e.target.value)}
-                ></ha-textfield>
+                  .value="${this.getEntityValue('distance')}"
+                  placeholder="sensor.health_connect_distance"
+                  @input="${(e) => this.entityChanged('distance', e.target.value)}"
+                />
                 
                 <div class="entity-label">🔥 Calories actives:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('active_calories_burned')}
-                  .placeholder=${'sensor.health_connect_active_calories_burned'}
-                  @input=${(e) => this.entityChanged('active_calories_burned', e.target.value)}
-                ></ha-textfield>
+                  .value="${this.getEntityValue('active_calories_burned')}"
+                  placeholder="sensor.health_connect_active_calories_burned"
+                  @input="${(e) => this.entityChanged('active_calories_burned', e.target.value)}"
+                />
                 
                 <div class="entity-label">⚡ Calories totales:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('total_calories_burned')}
-                  .placeholder=${'sensor.health_connect_total_calories_burned'}
-                  @input=${(e) => this.entityChanged('total_calories_burned', e.target.value)}
-                ></ha-textfield>
+                  .value="${this.getEntityValue('total_calories_burned')}"
+                  placeholder="sensor.health_connect_total_calories_burned"
+                  @input="${(e) => this.entityChanged('total_calories_burned', e.target.value)}"
+                />
                 
                 <div class="entity-label">⛰️ Dénivelé:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('elevation_gained')}
-                  .placeholder=${'sensor.health_connect_elevation_gained'}
-                  @input=${(e) => this.entityChanged('elevation_gained', e.target.value)}
-                ></ha-textfield>
+                  .value="${this.getEntityValue('elevation_gained')}"
+                  placeholder="sensor.health_connect_elevation_gained"
+                  @input="${(e) => this.entityChanged('elevation_gained', e.target.value)}"
+                />
                 
                 <div class="entity-label">🪜 Étages montés:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('floors_climbed')}
-                  .placeholder=${'sensor.health_connect_floors_climbed'}
-                  @input=${(e) => this.entityChanged('floors_climbed', e.target.value)}
-                ></ha-textfield>
+                  .value="${this.getEntityValue('floors_climbed')}"
+                  placeholder="sensor.health_connect_floors_climbed"
+                  @input="${(e) => this.entityChanged('floors_climbed', e.target.value)}"
+                />
               </div>
             </div>
           </div>
@@ -359,28 +413,31 @@ class HealthConnectCardEditor extends HTMLElement {
             <div class="collapsible-content">
               <div class="entities-config">
                 <div class="entity-label">⚖️ Poids:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('weight')}
-                  .placeholder=${'sensor.health_connect_weight'}
-                  @input=${(e) => this.entityChanged('weight', e.target.value)}
-                ></ha-textfield>
+                  .value="${this.getEntityValue('weight')}"
+                  placeholder="sensor.health_connect_weight"
+                  @input="${(e) => this.entityChanged('weight', e.target.value)}"
+                />
                 
                 <div class="entity-label">📊 Masse grasse:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('body_fat')}
-                  .placeholder=${'sensor.health_connect_body_fat'}
-                  @input=${(e) => this.entityChanged('body_fat', e.target.value)}
-                ></ha-textfield>
+                  .value="${this.getEntityValue('body_fat')}"
+                  placeholder="sensor.health_connect_body_fat"
+                  @input="${(e) => this.entityChanged('body_fat', e.target.value)}"
+                />
                 
                 <div class="entity-label">💪 VO₂ Max:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('vo2_max')}
-                  .placeholder=${'sensor.health_connect_vo2_max'}
-                  @input=${(e) => this.entityChanged('vo2_max', e.target.value)}
-                ></ha-textfield>
+                  .value="${this.getEntityValue('vo2_max')}"
+                  placeholder="sensor.health_connect_vo2_max"
+                  @input="${(e) => this.entityChanged('vo2_max', e.target.value)}"
+                />
               </div>
             </div>
           </div>
@@ -393,12 +450,13 @@ class HealthConnectCardEditor extends HTMLElement {
             <div class="collapsible-content">
               <div class="entities-config">
                 <div class="entity-label">😴 Durée de sommeil:</div>
-                <ha-textfield
+                <input
+                  type="text"
                   class="entity-input"
-                  .value=${this.getEntityValue('sleep_duration')}
-                  .placeholder=${'sensor.health_connect_sleep_duration'}
-                  @input=${(e) => this.entityChanged('sleep_duration', e.target.value)}
-                ></ha-textfield>
+                  .value="${this.getEntityValue('sleep_duration')}"
+                  placeholder="sensor.health_connect_sleep_duration"
+                  @input="${(e) => this.entityChanged('sleep_duration', e.target.value)}"
+                />
               </div>
             </div>
           </div>
@@ -406,9 +464,9 @@ class HealthConnectCardEditor extends HTMLElement {
         
         <div class="config-section">
           <h3>ℹ️ Informations</h3>
-          <div style="font-size: 13px; color: var(--secondary-text-color); line-height: 1.5;">
+          <div class="info-box">
             <p><strong>Configuration des entités :</strong></p>
-            <ul style="margin: 8px 0; padding-left: 20px;">
+            <ul>
               <li>Laissez vide pour utiliser les noms par défaut</li>
               <li>Utilisez vos propres noms d'entités personnalisés</li>
               <li>Les capteurs non disponibles seront automatiquement masqués</li>
@@ -419,6 +477,36 @@ class HealthConnectCardEditor extends HTMLElement {
         </div>
       </div>
     `;
+
+    // Mise à jour des valeurs après le rendu
+    this.updateInputValues();
+    this.addEventListeners();
+  }
+
+  updateInputValues() {
+    // Mise à jour des valeurs des inputs après le rendu
+    setTimeout(() => {
+      const titleInput = this.shadowRoot.querySelector('input[type="text"]');
+      if (titleInput) titleInput.value = this.config.title || '';
+      
+      const showEmptyInput = this.shadowRoot.querySelector('input[type="checkbox"]');
+      if (showEmptyInput) showEmptyInput.checked = this.config.show_empty_categories || false;
+      
+      // Mise à jour des checkboxes des catégories
+      ['vitals', 'activity', 'body', 'sleep'].forEach(category => {
+        const checkbox = this.shadowRoot.querySelector(`#cat-${category}`);
+        if (checkbox) checkbox.checked = this.isCategorySelected(category);
+      });
+      
+      // Mise à jour des inputs des entités
+      this.shadowRoot.querySelectorAll('.entity-input').forEach(input => {
+        const placeholder = input.getAttribute('placeholder');
+        if (placeholder) {
+          const entityType = placeholder.split('_').pop();
+          input.value = this.getEntityValue(entityType) || '';
+        }
+      });
+    }, 10);
   }
 
   titleChanged(e) {
@@ -466,6 +554,43 @@ class HealthConnectCardEditor extends HTMLElement {
     
     const newConfig = { ...this.config, entities };
     this.configChanged(newConfig);
+  }
+
+  // Ajout des gestionnaires d'événements après le rendu
+  addEventListeners() {
+    // Gestionnaire pour le titre
+    const titleInput = this.shadowRoot.querySelector('input[type="text"]');
+    if (titleInput) {
+      titleInput.addEventListener('input', (e) => this.titleChanged(e));
+    }
+
+    // Gestionnaire pour les catégories vides
+    const showEmptyInput = this.shadowRoot.querySelector('input[type="checkbox"]');
+    if (showEmptyInput) {
+      showEmptyInput.addEventListener('change', (e) => this.showEmptyChanged(e));
+    }
+
+    // Gestionnaires pour les catégories
+    ['vitals', 'activity', 'body', 'sleep'].forEach(category => {
+      const checkbox = this.shadowRoot.querySelector(`#cat-${category}`);
+      if (checkbox) {
+        checkbox.addEventListener('change', (e) => this.categoryChanged(category, e.target.checked));
+      }
+    });
+
+    // Gestionnaires pour les entités
+    this.shadowRoot.querySelectorAll('.entity-input').forEach(input => {
+      input.addEventListener('input', (e) => {
+        // Extraire le type d'entité depuis le placeholder
+        const placeholder = input.getAttribute('placeholder');
+        if (placeholder) {
+          const match = placeholder.match(/sensor\.health_connect_(.+)$/);
+          if (match) {
+            this.entityChanged(match[1], e.target.value);
+          }
+        }
+      });
+    });
   }
 }
 

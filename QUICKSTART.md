@@ -33,6 +33,21 @@ categories:
 show_empty_categories: false
 ```
 
+### Avec entités personnalisées
+```yaml
+type: custom:health-connect-card
+title: "Ma santé"
+categories:
+  - vitals
+  - activity
+entities:
+  # Remplacez par vos vraies entités
+  heart_rate: sensor.mon_capteur_coeur
+  steps: sensor.compteur_pas_fitbit
+  weight: sensor.balance_xiaomi
+  blood_pressure_systolic: sensor.tension_systole
+```
+
 ## 📱 Capteurs requis
 
 Assurez-vous d'avoir l'intégration Health Connect configurée avec ces capteurs :

@@ -573,10 +573,15 @@ window.customCards.push({
 const loadEditor = () => {
   if (!customElements.get('health-connect-card-editor')) {
     const script = document.createElement('script');
-    script.src = '/hacsfiles/lovelace-health-card/health-connect-card-editor.js';
+    script.src = '/hacsfiles/lovelace-health-card/health-connect-card-editor-simple.js';
     script.onerror = () => {
-      // Fallback si le fichier n'est pas trouvé
-      console.warn('Éditeur Health Connect Card non trouvé');
+      // Fallback pour développement local
+      const fallbackScript = document.createElement('script');
+      fallbackScript.src = './health-connect-card-editor-simple.js';
+      fallbackScript.onerror = () => {
+        console.warn('Éditeur Health Connect Card non trouvé');
+      };
+      document.head.appendChild(fallbackScript);
     };
     document.head.appendChild(script);
   }
