@@ -1,602 +1,487 @@
-class HealthConnectCard extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
-  }
+// Health Connect Card - A custom card for displaying Health Connect sensor data
+// Compatible with HACS and includes visual editor support
 
-  setConfig(config) {
-    if (!config) {
-      throw new Error('Configuration invalide');
+import { 
+  LitElement, 
+  html, 
+  css, 
+  nothing 
+} from "https://unpkg.com/lit@3.1.0/index.js?module";
+
+// Helper function to get the health icon based on sensor type
+function getHealthIcon(sensorType) {
+  const iconMap = {
+    'steps': 'mdi:walk',
+    'heart_rate': 'mdi:heart-pulse',
+    'sleep': 'mdi:sleep',
+    'weight': 'mdi:scale',
+    'blood_pressure': 'mdi:heart-box',
+    'calories': 'mdi:fire',
+    'distance': 'mdi:map-marker-distance',
+    'body_fat': 'mdi:human',
+    'glucose': 'mdi:water',
+    'oxygen': 'mdi:lungs',
+    'floors': 'mdi:stairs',
+    'elevation': 'mdi:trending-up',
+    'vo2_max': 'mdi:speedometer',
+    'respiratory_rate': 'mdi:lungs',
+    'temperature': 'mdi:thermometer'
+  };
+  
+  // Try to match sensor entity_id to icon
+  for (const [key, icon] of Object.entries(iconMap)) {
+    if (sensorType.includes(key)) {
+      return icon;
     }
-    this.config = config;
-    this.render();
   }
+  
+  return 'mdi:medical-bag'; // Default health icon
+}
 
-  set hass(hass) {
-    this._hass = hass;
-    this.render();
+// Helper function to format health sensor values
+function formatHealthValue(stateObj) {
+  if (!stateObj) return 'Unknown';
+  
+  const value = stateObj.state;
+  const unit = stateObj.attributes.unit_of_measurement || '';
+  
+  if (value === 'unavailable' || value === 'unknown') {
+    return value;
   }
-
-  get hass() {
-    return this._hass;
+  
+  // Format numbers
+  if (!isNaN(value)) {
+    const numValue = parseFloat(value);
+    if (numValue === Math.floor(numValue)) {
+      return `${numValue} ${unit}`.trim();
+    } else {
+      return `${numValue.toFixed(1)} ${unit}`.trim();
+    }
   }
+  
+  return `${value} ${unit}`.trim();
+}
 
-  // Configuration par défaut des capteurs Health Connect avec leurs métadonnées
-  getDefaultSensorConfig() {
+// Main Health Connect Card Class
+class HealthConnectCard extends LitElement {
+  static get properties() {
     return {
-      vitals: {
-        title: '🫀 Signes vitaux',
-        sensors: [
-          {
-            type: 'heart_rate',
-            name: 'Fréquence cardiaque',
-            icon: '💓',
-            description: 'Dernière fréquence cardiaque enregistrée'
-          },
-          {
-            type: 'resting_heart_rate',
-            name: 'FC au repos',
-            icon: '💤',
-            description: 'Dernière fréquence cardiaque au repos'
-          },
-          {
-            type: 'blood_glucose',
-            name: 'Glycémie',
-            icon: '🩸',
-            description: 'Dernière mesure de glycémie'
-          },
-          {
-            type: 'systolic_blood_pressure',
-            name: 'Tension systolique',
-            icon: '📈',
-            description: 'Dernière tension artérielle systolique'
-          },
-          {
-            type: 'diastolic_blood_pressure',
-            name: 'Tension diastolique',
-            icon: '📉',
-            description: 'Dernière tension artérielle diastolique'
-          },
-          {
-            type: 'oxygen_saturation',
-            name: 'Saturation O₂',
-            icon: '🫁',
-            description: 'Dernière saturation en oxygène'
-          },
-          {
-            type: 'respiratory_rate',
-            name: 'Fréquence respiratoire',
-            icon: '🌬️',
-            description: 'Dernière fréquence respiratoire'
-          },
-          {
-            type: 'heart_rate_variability',
-            name: 'Variabilité FC',
-            icon: '📊',
-            description: 'Dernière variabilité de fréquence cardiaque'
-          }
-        ]
-      },
-      activity: {
-        title: '🏃‍♂️ Activité',
-        sensors: [
-          {
-            type: 'steps',
-            name: 'Pas',
-            icon: '👣',
-            description: 'Nombre total de pas depuis minuit'
-          },
-          {
-            type: 'distance',
-            name: 'Distance',
-            icon: '📍',
-            description: 'Distance totale parcourue depuis minuit'
-          },
-          {
-            type: 'active_calories_burned',
-            name: 'Calories actives',
-            icon: '🔥',
-            description: 'Calories actives brûlées (hors métabolisme de base)'
-          },
-          {
-            type: 'total_calories_burned',
-            name: 'Calories totales',
-            icon: '⚡',
-            description: 'Calories totales brûlées depuis minuit'
-          },
-          {
-            type: 'elevation_gained',
-            name: 'Dénivelé',
-            icon: '⛰️',
-            description: 'Dénivelé total gagné depuis minuit'
-          },
-          {
-            type: 'floors_climbed',
-            name: 'Étages montés',
-            icon: '🪜',
-            description: 'Nombre d\'étages montés depuis minuit'
-          }
-        ]
-      },
-      body: {
-        title: '⚖️ Mesures corporelles',
-        sensors: [
-          {
-            type: 'weight',
-            name: 'Poids',
-            icon: '⚖️',
-            description: 'Dernier poids enregistré'
-          },
-          {
-            type: 'body_fat',
-            name: 'Masse grasse',
-            icon: '📊',
-            description: 'Dernier pourcentage de masse grasse'
-          },
-          {
-            type: 'vo2_max',
-            name: 'VO₂ Max',
-            icon: '💪',
-            description: 'Dernier score VO₂ Max enregistré'
-          }
-        ]
-      },
-      sleep: {
-        title: '😴 Sommeil',
-        sensors: [
-          {
-            type: 'sleep_duration',
-            name: 'Durée de sommeil',
-            icon: '😴',
-            description: 'Dernière durée de sommeil enregistrée'
-          }
-        ]
-      }
+      hass: {},
+      config: {},
+      _config: {}
     };
   }
 
-  // Récupération de la configuration des capteurs avec entités personnalisées
-  getSensorConfig() {
-    const defaultConfig = this.getDefaultSensorConfig();
-    const customEntities = this.config.entities || {};
-
-    // Pour chaque catégorie, on applique les entités personnalisées
-    Object.keys(defaultConfig).forEach(categoryKey => {
-      defaultConfig[categoryKey].sensors = defaultConfig[categoryKey].sensors.map(sensor => {
-        // Cherche une entité personnalisée pour ce type de capteur
-        const customEntity = customEntities[sensor.type];
-        return {
-          ...sensor,
-          entity: customEntity || `sensor.health_connect_${sensor.type}` // Fallback sur le nom par défaut
-        };
-      });
-    });
-
-    return defaultConfig;
-  }
-
-  // Formatage intelligent des valeurs
-  formatValue(value, entity, sensorType) {
-    if (value === null || value === undefined || value === 'unavailable' || value === 'unknown') {
-      return '—';
-    }
-
-    const numValue = parseFloat(value);
-    const unit = entity?.attributes?.unit_of_measurement || '';
-    
-    // Formatage spécifique selon le type de capteur
-    if (sensorType === 'weight' && (unit === 'g' || unit === 'grams')) {
-      return `${(numValue / 1000).toFixed(1)} kg`;
-    }
-    
-    if (sensorType === 'distance' && (unit === 'm' || unit === 'meters')) {
-      if (numValue >= 1000) {
-        return `${(numValue / 1000).toFixed(2)} km`;
-      }
-      return `${numValue.toFixed(0)} m`;
-    }
-
-    if (sensorType === 'sleep_duration' && (unit === 'min' || unit === 'minutes')) {
-      const hours = Math.floor(numValue / 60);
-      const minutes = numValue % 60;
-      return `${hours}h ${minutes.toFixed(0)}min`;
-    }
-
-    // Formatage numérique standard avec unité
-    if (numValue >= 1000 && !unit.includes('%')) {
-      return `${(numValue / 1000).toFixed(1)}k ${unit}`;
-    }
-    
-    if (numValue % 1 === 0) {
-      return `${numValue}${unit ? ' ' + unit : ''}`;
-    } else {
-      return `${numValue.toFixed(1)}${unit ? ' ' + unit : ''}`;
-    }
-  }
-
-  // Déterminer la couleur selon la valeur
-  getValueColor(value, sensorType) {
-    if (value === null || value === undefined || value === 'unavailable' || value === 'unknown') {
-      return '#6b7280'; // Gris
-    }
-
-    const numValue = parseFloat(value);
-    
-    // Couleurs selon les plages normales
-    if (sensorType === 'heart_rate') {
-      if (numValue < 60 || numValue > 100) return '#ef4444'; // Rouge
-      if (numValue < 70 || numValue > 90) return '#f59e0b'; // Orange
-      return '#10b981'; // Vert
-    }
-
-    if (sensorType === 'resting_heart_rate') {
-      if (numValue < 50 || numValue > 90) return '#ef4444';
-      if (numValue < 60 || numValue > 80) return '#f59e0b';
-      return '#10b981';
-    }
-
-    if (sensorType === 'oxygen_saturation') {
-      if (numValue < 95) return '#ef4444';
-      if (numValue < 98) return '#f59e0b';
-      return '#10b981';
-    }
-
-    // Couleur par défaut selon la valeur
-    if (numValue > 0) return '#3b82f6'; // Bleu
-    return '#6b7280'; // Gris
-  }
-
-  // Rendu d'une carte de capteur
-  renderSensorCard(sensor) {
-    const entity = this.hass?.states?.[sensor.entity];
-    const value = entity?.state;
-    const lastUpdated = entity?.last_updated;
-    const formattedValue = this.formatValue(value, entity, sensor.type);
-    const valueColor = this.getValueColor(value, sensor.type);
-
-    const isAvailable = value !== 'unavailable' && value !== 'unknown' && value !== null;
-    
-    return `
-      <div class="sensor-card ${!isAvailable ? 'unavailable' : ''}" 
-           onclick="this.getRootNode().host.openEntityDetails('${sensor.entity}')">
-        <div class="sensor-header">
-          <span class="sensor-icon">${sensor.icon}</span>
-          <span class="sensor-name">${sensor.name}</span>
-        </div>
-        <div class="sensor-value" style="color: ${valueColor}">
-          ${formattedValue}
-        </div>
-        <div class="sensor-description">
-          ${sensor.description}
-        </div>
-        ${lastUpdated ? `<div class="sensor-updated">
-          Mis à jour: ${new Date(lastUpdated).toLocaleString('fr-FR')}
-        </div>` : ''}
-        ${!isAvailable ? `<div class="sensor-entity">
-          Entité: ${sensor.entity}
-        </div>` : ''}
-      </div>
-    `;
-  }
-
-  // Ouverture des détails d'une entité
-  openEntityDetails(entityId) {
-    const event = new CustomEvent('hass-more-info', {
-      detail: { entityId },
-      bubbles: true,
-      composed: true
-    });
-    this.dispatchEvent(event);
-  }
-
-  // Rendu d'une catégorie
-  renderCategory(categoryKey, category) {
-    const availableSensors = category.sensors.filter(sensor => 
-      this.hass?.states?.[sensor.entity] !== undefined
-    );
-
-    if (availableSensors.length === 0 && !this.config.show_empty_categories) {
-      return '';
-    }
-
-    return `
-      <div class="category">
-        <h3 class="category-title">${category.title}</h3>
-        <div class="sensors-grid">
-          ${availableSensors.map(sensor => this.renderSensorCard(sensor)).join('')}
-        </div>
-        ${availableSensors.length === 0 ? '<div class="no-sensors">Aucun capteur disponible</div>' : ''}
-      </div>
-    `;
-  }
-
-  render() {
-    if (!this.hass) return;
-
-    const sensorConfig = this.getSensorConfig();
-    const selectedCategories = this.config.categories || Object.keys(sensorConfig);
-
-    this.shadowRoot.innerHTML = `
-      <style>
-        :host {
-          display: block;
-          padding: 16px;
-          background: var(--card-background-color, #fff);
-          border-radius: var(--ha-card-border-radius, 12px);
-          box-shadow: var(--ha-card-box-shadow, 0 2px 8px rgba(0,0,0,0.1));
-          font-family: var(--primary-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
-        }
-
-        .card-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 24px;
-          padding-bottom: 16px;
-          border-bottom: 2px solid var(--divider-color, #e1e5e9);
-        }
-
-        .card-title {
-          font-size: 24px;
-          font-weight: 600;
-          color: var(--primary-text-color, #1f2937);
-          margin: 0;
-        }
-
-        .card-subtitle {
-          font-size: 14px;
-          color: var(--secondary-text-color, #6b7280);
-          margin: 4px 0 0 0;
-        }
-
-        .category {
-          margin-bottom: 32px;
-        }
-
-        .category:last-child {
-          margin-bottom: 0;
-        }
-
-        .category-title {
-          font-size: 18px;
-          font-weight: 600;
-          color: var(--primary-text-color, #1f2937);
-          margin: 0 0 16px 0;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .sensors-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 16px;
-        }
-
-        .sensor-card {
-          background: var(--primary-background-color, #f9fafb);
-          border: 1px solid var(--divider-color, #e1e5e9);
-          border-radius: 12px;
-          padding: 16px;
-          transition: all 0.2s ease;
-          cursor: pointer;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .sensor-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-          border-color: var(--primary-color, #3b82f6);
-        }
-
-        .sensor-card.unavailable {
-          opacity: 0.6;
-          background: var(--disabled-background-color, #f3f4f6);
-        }
-
-        .sensor-card.unavailable:hover {
-          transform: none;
-          box-shadow: none;
-        }
-
-        .sensor-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 12px;
-        }
-
-        .sensor-icon {
-          font-size: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 40px;
-          height: 40px;
-          background: var(--primary-color, #3b82f6);
-          color: white;
-          border-radius: 8px;
-          flex-shrink: 0;
-        }
-
-        .sensor-name {
-          font-weight: 600;
-          font-size: 16px;
-          color: var(--primary-text-color, #1f2937);
-        }
-
-        .sensor-value {
-          font-size: 28px;
-          font-weight: 700;
-          margin-bottom: 8px;
-          line-height: 1.2;
-        }
-
-        .sensor-description {
-          font-size: 13px;
-          color: var(--secondary-text-color, #6b7280);
-          line-height: 1.4;
-          margin-bottom: 8px;
-        }
-
-        .sensor-updated {
-          font-size: 11px;
-          color: var(--disabled-text-color, #9ca3af);
-          font-style: italic;
-        }
-
-        .sensor-entity {
-          font-size: 10px;
-          color: var(--error-color, #ef4444);
-          font-family: monospace;
-          background: rgba(239, 68, 68, 0.1);
-          padding: 2px 4px;
-          border-radius: 4px;
-          margin-top: 4px;
-        }
-
-        .no-sensors {
-          text-align: center;
-          padding: 32px;
-          color: var(--secondary-text-color, #6b7280);
-          font-style: italic;
-        }
-
-        .loading {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 100px;
-          color: var(--secondary-text-color, #6b7280);
-        }
-
-        @media (max-width: 768px) {
-          :host {
-            padding: 12px;
-          }
-          
-          .sensors-grid {
-            grid-template-columns: 1fr;
-            gap: 12px;
-          }
-          
-          .sensor-card {
-            padding: 12px;
-          }
-          
-          .sensor-value {
-            font-size: 24px;
-          }
-          
-          .card-title {
-            font-size: 20px;
-          }
-        }
-
-        @media (prefers-color-scheme: dark) {
-          .sensor-card {
-            background: var(--card-background-color, #1f2937);
-            border-color: var(--divider-color, #374151);
-          }
-          
-          .sensor-icon {
-            background: var(--primary-color, #60a5fa);
-          }
-        }
-      </style>
-
-      <div class="card-content">
-        <div class="card-header">
-          <div>
-            <h2 class="card-title">🏥 Health Connect</h2>
-            <p class="card-subtitle">Données de santé en temps réel</p>
-          </div>
-        </div>
-        
-        ${selectedCategories
-          .map(categoryKey => {
-            const category = sensorConfig[categoryKey];
-            return category ? this.renderCategory(categoryKey, category) : '';
-          })
-          .join('')
-        }
-      </div>
-    `;
-  }
-
-  getCardSize() {
-    return 6; // Hauteur estimée de la carte
-  }
-
-  // Configuration de l'éditeur
   static getConfigElement() {
     return document.createElement('health-connect-card-editor');
   }
 
   static getStubConfig() {
     return {
-      categories: ['vitals', 'activity', 'body', 'sleep'],
-      show_empty_categories: false,
-      entities: {
-        // Exemple avec quelques entités personnalisées
-        // heart_rate: 'sensor.my_heart_rate',
-        // steps: 'sensor.my_steps_counter',
-        // weight: 'sensor.my_scale_weight'
-      }
+      type: 'custom:health-connect-card',
+      title: 'Health Connect',
+      entities: [],
+      show_header: true,
+      columns: 2
     };
   }
 
-  static get properties() {
-    return {
-      hass: Object,
-      config: Object
-    };
+  setConfig(config) {
+    if (!config) {
+      throw new Error('Invalid configuration');
+    }
+    this._config = { ...HealthConnectCard.getStubConfig(), ...config };
+  }
+
+  get config() {
+    return this._config;
+  }
+
+  shouldUpdate(changedProps) {
+    return changedProps.has('hass') || changedProps.has('config');
+  }
+
+  render() {
+    if (!this.config || !this.hass) {
+      return html`<div class="error">Configuration or Home Assistant object missing</div>`;
+    }
+
+    const entities = this.config.entities || [];
+    if (entities.length === 0) {
+      return html`
+        <ha-card>
+          <div class="card-content">
+            <div class="no-entities">
+              <mdi-icon icon="mdi:medical-bag"></mdi-icon>
+              <p>No Health Connect sensors configured</p>
+              <p class="secondary">Add sensors in the card configuration</p>
+            </div>
+          </div>
+        </ha-card>
+      `;
+    }
+
+    return html`
+      <ha-card>
+        ${this.config.show_header !== false ? html`
+          <div class="card-header">
+            <div class="name">${this.config.title || 'Health Connect'}</div>
+            ${this.config.icon ? html`<ha-icon icon="${this.config.icon}"></ha-icon>` : nothing}
+          </div>
+        ` : nothing}
+        
+        <div class="card-content">
+          <div class="sensors-grid" style="--columns: ${this.config.columns || 2}">
+            ${entities.map(entity => this.renderSensor(entity))}
+          </div>
+        </div>
+      </ha-card>
+    `;
+  }
+
+  renderSensor(entityConfig) {
+    const entityId = typeof entityConfig === 'string' ? entityConfig : entityConfig.entity;
+    const stateObj = this.hass.states[entityId];
+    
+    if (!stateObj) {
+      return html`
+        <div class="sensor-item error">
+          <ha-icon icon="mdi:alert-circle"></ha-icon>
+          <div class="sensor-info">
+            <div class="sensor-name">Entity Not Found</div>
+            <div class="sensor-value">${entityId}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    const config = typeof entityConfig === 'string' ? {} : entityConfig;
+    const name = config.name || stateObj.attributes.friendly_name || entityId;
+    const icon = config.icon || getHealthIcon(entityId);
+    const value = formatHealthValue(stateObj);
+    const lastUpdated = stateObj.last_updated ? new Date(stateObj.last_updated).toLocaleTimeString() : '';
+
+    return html`
+      <div class="sensor-item" @click=${() => this._showMoreInfo(entityId)}>
+        <ha-icon icon="${icon}" class="sensor-icon"></ha-icon>
+        <div class="sensor-info">
+          <div class="sensor-name">${name}</div>
+          <div class="sensor-value">${value}</div>
+          ${this.config.show_last_updated ? html`
+            <div class="sensor-updated">Updated: ${lastUpdated}</div>
+          ` : nothing}
+        </div>
+      </div>
+    `;
+  }
+
+  _showMoreInfo(entityId) {
+    const event = new Event('hass-more-info', {
+      bubbles: true,
+      composed: true,
+    });
+    event.detail = { entityId };
+    this.dispatchEvent(event);
+  }
+
+  static get styles() {
+    return css`
+      :host {
+        --columns: 2;
+      }
+
+      .error {
+        color: var(--error-color);
+        padding: 16px;
+        text-align: center;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 16px 0;
+      }
+
+      .card-header .name {
+        font-size: var(--ha-card-header-font-size, 24px);
+        color: var(--ha-card-header-color, --primary-text-color);
+        font-weight: normal;
+        margin: 0;
+      }
+
+      .card-content {
+        padding: 16px;
+      }
+
+      .no-entities {
+        text-align: center;
+        padding: 32px 16px;
+        color: var(--secondary-text-color);
+      }
+
+      .no-entities mdi-icon {
+        --mdc-icon-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+
+      .no-entities p {
+        margin: 8px 0;
+      }
+
+      .no-entities .secondary {
+        font-size: 14px;
+        opacity: 0.7;
+      }
+
+      .sensors-grid {
+        display: grid;
+        grid-template-columns: repeat(var(--columns), 1fr);
+        gap: 16px;
+        width: 100%;
+      }
+
+      .sensor-item {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        background: var(--card-background-color, var(--primary-background-color));
+        border-radius: 8px;
+        border: 1px solid var(--divider-color);
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+      .sensor-item:hover {
+        background-color: var(--state-icon-active-color);
+        background-color: var(--secondary-background-color);
+      }
+
+      .sensor-item.error {
+        border-color: var(--error-color);
+        color: var(--error-color);
+        cursor: default;
+      }
+
+      .sensor-icon {
+        --mdc-icon-size: 24px;
+        margin-right: 12px;
+        color: var(--state-icon-color);
+        flex-shrink: 0;
+      }
+
+      .sensor-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .sensor-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--primary-text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 2px;
+      }
+
+      .sensor-value {
+        font-size: 16px;
+        font-weight: bold;
+        color: var(--state-icon-active-color, var(--primary-color));
+      }
+
+      .sensor-updated {
+        font-size: 12px;
+        color: var(--secondary-text-color);
+        margin-top: 4px;
+      }
+
+      /* Responsive design */
+      @media (max-width: 600px) {
+        .sensors-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 400px) {
+        .card-content {
+          padding: 12px;
+        }
+        
+        .sensors-grid {
+          gap: 12px;
+        }
+        
+        .sensor-item {
+          padding: 8px;
+        }
+      }
+    `;
+  }
+
+  getCardSize() {
+    const entities = this.config.entities || [];
+    const columns = this.config.columns || 2;
+    const rows = Math.ceil(entities.length / columns);
+    return Math.max(1, rows + (this.config.show_header !== false ? 1 : 0));
   }
 }
 
-// Enregistrement de la carte personnalisée
-customElements.define('health-connect-card', HealthConnectCard);
+// Health Connect Card Editor Class
+class HealthConnectCardEditor extends LitElement {
+  static get properties() {
+    return {
+      hass: {},
+      config: {},
+      _config: {}
+    };
+  }
 
-// Configuration pour l'éditeur de cartes
+  setConfig(config) {
+    this._config = { ...config };
+  }
+
+  get _title() {
+    return this._config.title || '';
+  }
+
+  get _icon() {
+    return this._config.icon || '';
+  }
+
+  get _entities() {
+    return this._config.entities || [];
+  }
+
+  get _columns() {
+    return this._config.columns || 2;
+  }
+
+  get _show_header() {
+    return this._config.show_header !== false;
+  }
+
+  get _show_last_updated() {
+    return this._config.show_last_updated || false;
+  }
+
+  render() {
+    if (!this.hass) {
+      return html`<div>Loading...</div>`;
+    }
+
+    const schema = [
+      {
+        name: "title",
+        default: "Health Connect",
+        selector: {
+          text: {}
+        }
+      },
+      {
+        name: "icon", 
+        default: "",
+        selector: {
+          icon: {}
+        }
+      },
+      {
+        name: "entities",
+        default: [],
+        selector: {
+          entity: {
+            multiple: true,
+            filter: {
+              domain: "sensor",
+              integration: "mobile_app"
+            }
+          }
+        }
+      },
+      {
+        name: "columns",
+        default: 2,
+        selector: {
+          number: {
+            min: 1,
+            max: 4,
+            step: 1
+          }
+        }
+      },
+      {
+        name: "show_header",
+        default: true,
+        selector: {
+          boolean: {}
+        }
+      },
+      {
+        name: "show_last_updated",
+        default: false,
+        selector: {
+          boolean: {}
+        }
+      }
+    ];
+
+    return html`
+      <ha-form
+        .hass=${this.hass}
+        .data=${this._config}
+        .schema=${schema}
+        .computeLabel=${this._computeLabel}
+        @value-changed=${this._valueChanged}
+      ></ha-form>
+    `;
+  }
+
+  _computeLabel(schema) {
+    const labels = {
+      title: "Title",
+      icon: "Icon",
+      entities: "Health Connect Sensors", 
+      columns: "Number of Columns",
+      show_header: "Show Header",
+      show_last_updated: "Show Last Updated Time"
+    };
+    return labels[schema.name] || schema.name;
+  }
+
+  _valueChanged(ev) {
+    if (!this._config || !this.hass) {
+      return;
+    }
+
+    const config = { ...this._config, ...ev.detail.value };
+
+    const event = new CustomEvent("config-changed", {
+      detail: { config },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
+  }
+}
+
+// Register the custom elements
+customElements.define('health-connect-card', HealthConnectCard);
+customElements.define('health-connect-card-editor', HealthConnectCardEditor);
+
+// Add to window for HACS
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'health-connect-card',
   name: 'Health Connect Card',
-  description: 'Affiche les capteurs Health Connect dans une interface organisée et moderne',
+  description: 'A card for displaying Health Connect sensor data with visual editor support',
   preview: true,
-  configurable: true,
-  documentationURL: 'https://github.com/LightD31/lovelace-health-card'
+  documentationURL: 'https://github.com/username/health-connect-card'
 });
 
-// Chargement de l'éditeur
-const loadEditor = () => {
-  if (!customElements.get('health-connect-card-editor')) {
-    const script = document.createElement('script');
-    script.src = '/hacsfiles/lovelace-health-card/health-connect-card-editor.js';
-    script.onerror = () => {
-      // Fallback pour développement local
-      const fallbackScript = document.createElement('script');
-      fallbackScript.src = './health-connect-card-editor.js';
-      fallbackScript.onerror = () => {
-        console.warn('Éditeur Health Connect Card non trouvé');
-      };
-      document.head.appendChild(fallbackScript);
-    };
-    document.head.appendChild(script);
-  }
-};
-
-// Chargement différé de l'éditeur
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', loadEditor);
-} else {
-  loadEditor();
-}
-
-// Information de la console
 console.info(
-  `%c HEALTH-CONNECT-CARD %c Version 1.0.0 `,
-  'color: white; background: #3b82f6; font-weight: 700;',
-  'color: #3b82f6; background: white; font-weight: 700;'
+  `%c HEALTH-CONNECT-CARD %c v1.0.0 `,
+  'color: orange; font-weight: bold; background: black',
+  'color: white; font-weight: bold; background: dimgray',
 );

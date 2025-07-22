@@ -1,27 +1,21 @@
 # Health Connect Card for Home Assistant
 
-Une carte Lovelace personnalisée pour Home Assistant qui affiche les informations des capteurs Health Connect dans une interface belle et organisée.
+A custom Lovelace card for Home Assistant that displays Health Connect sensor information in a beautiful, organized layout.
 
 ![Health Connect Card](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![HACS](https://img.shields.io/badge/HACS-compatible-green.svg)
-![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2023.4%2B-blue.svg)
 
-## ✨ Fonctionnalités
+## Features
 
-- 🏥 **Données de santé complètes** : Affiche tous les capteurs Health Connect de votre appareil Android
-- 📊 **Catégories organisées** : Groupe les capteurs en Signes vitaux, Activité, Mesures corporelles et Sommeil
-- 🎨 **Design moderne** : Interface responsive qui s'intègre parfaitement à l'esthétique de Home Assistant
-- 📱 **Responsive mobile** : Optimisé pour l'affichage desktop et mobile
-- ⚡ **Auto-détection** : Découvre et affiche automatiquement les capteurs Health Connect disponibles
-- 🔄 **Mises à jour temps réel** : Affiche les données en direct de vos capteurs Health Connect
-- 🎯 **Détails au clic** : Cliquez sur n'importe quel capteur pour voir les informations détaillées
-- ⚙️ **Capteurs personnalisables** : Choisissez quels capteurs afficher via l'interface de configuration
-- �️ **Entités personnalisées** : Utilisez vos propres noms d'entités au lieu des noms par défaut
-- �🌙 **Thème adaptatif** : Support automatique du mode sombre/clair
-- 🎨 **Codes couleur intelligents** : Indication visuelle des valeurs normales, attention et alerte
-- 📏 **Formatage intelligent** : Conversion automatique des unités (g→kg, m→km, min→heures, etc.)
+- 🏥 **Comprehensive Health Data**: Displays all Health Connect sensors from your Android device
+- 📊 **Organized Categories**: Groups sensors into Vitals, Activity, Body Measurements, and Sleep
+- 🎨 **Beautiful Design**: Modern, responsive design that fits Home Assistant's aesthetic
+- 📱 **Mobile Responsive**: Optimized for both desktop and mobile viewing
+- ⚡ **Auto-Detection**: Automatically discovers and displays available Health Connect sensors
+- 🔄 **Real-time Updates**: Shows live data from your Health Connect sensors
+- 🎯 **Click to Details**: Click any sensor to view detailed information
 
-## 📸 Captures d'écran
+## Screenshots
 
 The card displays your health data in organized categories:
 
@@ -84,18 +78,7 @@ resources:
 
 ## Configuration
 
-### Using the Visual Editor (Recommended)
-
-1. Add the card to your dashboard
-2. Click the **Configure** button (pencil icon) on the card
-3. Set a custom title (optional)
-4. Select which sensors you want to display by checking the boxes
-5. Only sensors that are available in your Home Assistant will be enabled
-6. Save your configuration
-
-### Manual YAML Configuration
-
-If you prefer to configure the card manually, you can use YAML:
+Add the card to your Lovelace dashboard:
 
 ### Basic Configuration
 
@@ -108,11 +91,6 @@ type: custom:health-connect-card
 ```yaml
 type: custom:health-connect-card
 title: "My Health Data"
-sensors:
-  - sensor.health_connect_steps
-  - sensor.health_connect_heart_rate
-  - sensor.health_connect_weight
-  - sensor.health_connect_sleep_duration
 ```
 
 ### Configuration Options
@@ -120,7 +98,6 @@ sensors:
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `title` | string | "Health Connect Sensors" | Custom title for the card |
-| `sensors` | list | (all available sensors) | List of specific sensor entities to display. If not specified, all available Health Connect sensors will be shown |
 
 ## Setting Up Health Connect Sensors
 
