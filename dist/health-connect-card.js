@@ -1,5 +1,12 @@
 // Health Connect Card - A custom card for displaying Health Connect sensor data
 // Compatible with HACS and includes visual editor support
+//
+// Configuration options for entities:
+// - String format: "sensor.entity_id" (uses friendly_name)
+// - Object format: { entity: "sensor.entity_id", title: "Custom Title", name: "Legacy Name", icon: "mdi:icon" }
+//   - title: Custom title that overrides friendly_name and name
+//   - name: Legacy property, still supported but title takes precedence
+//   - icon: Custom icon for the sensor
 
 import { 
   LitElement, 
@@ -156,7 +163,7 @@ class HealthConnectCard extends LitElement {
     }
 
     const config = typeof entityConfig === 'string' ? {} : entityConfig;
-    const name = config.name || stateObj.attributes.friendly_name || entityId;
+    const name = config.title || config.name || stateObj.attributes.friendly_name || entityId;
     const icon = config.icon || getHealthIcon(entityId);
     const value = formatHealthValue(stateObj);
     const lastUpdated = stateObj.last_updated ? new Date(stateObj.last_updated).toLocaleTimeString() : '';
