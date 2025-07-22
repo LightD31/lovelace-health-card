@@ -14,6 +14,7 @@ A custom Lovelace card for Home Assistant that displays Health Connect sensor in
 - ⚡ **Auto-Detection**: Automatically discovers and displays available Health Connect sensors
 - 🔄 **Real-time Updates**: Shows live data from your Health Connect sensors
 - 🎯 **Click to Details**: Click any sensor to view detailed information
+- ⚙️ **Customizable Sensors**: Choose which sensors to display in the UI configuration
 
 ## Screenshots
 
@@ -91,6 +92,11 @@ type: custom:health-connect-card
 ```yaml
 type: custom:health-connect-card
 title: "My Health Data"
+sensors:
+  - sensor.health_connect_steps
+  - sensor.health_connect_heart_rate
+  - sensor.health_connect_weight
+  - sensor.health_connect_sleep_duration
 ```
 
 ### Configuration Options
@@ -98,6 +104,7 @@ title: "My Health Data"
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `title` | string | "Health Connect Sensors" | Custom title for the card |
+| `sensors` | list | (all available sensors) | List of specific sensor entities to display. If not specified, all available Health Connect sensors will be shown |
 
 ## Setting Up Health Connect Sensors
 

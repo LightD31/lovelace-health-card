@@ -240,9 +240,16 @@ class HealthConnectCard extends LitElement {
         </div>
         <div class="card-content">
           ${Object.entries(sensorCategories).map(([categoryKey, category]) => {
-            const categorySensors = category.sensors.filter(sensor => 
+            let categorySensors = category.sensors.filter(sensor => 
               this.hass.states[sensor.entity]
             );
+
+            // If sensors are specified in config, only show configured sensors
+            if (this.config.sensors && this.config.sensors.length > 0) {
+              categorySensors = categorySensors.filter(sensor => 
+                this.config.sensors.includes(sensor.entity)
+              );
+            }
 
             if (categorySensors.length === 0) return '';
 
@@ -389,8 +396,17 @@ class HealthConnectCard extends LitElement {
     let sensors = [];
     Object.values(categories).forEach(category => {
       category.sensors.forEach(sensor => {
+        // Check if sensor exists in Home Assistant
         if (this.hass.states[sensor.entity]) {
-          sensors.push(sensor);
+          // If sensors are specified in config, only show those
+          if (this.config.sensors && this.config.sensors.length > 0) {
+            if (this.config.sensors.includes(sensor.entity)) {
+              sensors.push(sensor);
+            }
+          } else {
+            // If no sensors specified, show all available sensors
+            sensors.push(sensor);
+          }
         }
       });
     });
@@ -428,14 +444,16 @@ class HealthConnectCard extends LitElement {
     return Math.max(2, availableCategories.length + 1);
   }
 
-  static getConfigElement() {
-    return document.createElement("health-connect-card-editor");
-  }
-
   static getStubConfig() {
     return {
       type: "custom:health-connect-card",
-      title: "Health Connect Sensors"
+      title: "Health Connect Sensors",
+      sensors: [
+        "sensor.health_connect_steps",
+        "sensor.health_connect_heart_rate",
+        "sensor.health_connect_weight",
+        "sensor.health_connect_sleep_duration"
+      ]
     };
   }
 }
